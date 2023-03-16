@@ -126,13 +126,84 @@ class Draw {
         /* allloaded images */
         allloaded = function() {
             if(loadedCount === imageCount) {
-                _objects.forEach(function(courseObject) {
+				var semisolids = _objects.filter(obj=> {
+					return obj.type === 16
+				});
+				var mushroomterrain = _objects.filter(obj=> {
+					return obj.type === 14
+				});
+				var remainingObjs = _objects.filter(obj=> {
+					return obj.type != 16 && obj.type != 14
+				});
+				semisolids.forEach(function(courseObject) {
                     let type = courseObject.type;
                     if($this._blocks.hasDraw(type)) {
                         $this._drawObjectFromTheme($this._blocks, courseObject);
                     }
+                    else {
+                        console.log("fault: "+type);
+                        $this._drawText(courseObject.x, courseObject.y, type);
+                    }
+                });
+				mushroomterrain.forEach(function(courseObject) {
+                    let type = courseObject.type;
+                    if($this._blocks.hasDraw(type)) {
+                        $this._drawObjectFromTheme($this._blocks, courseObject);
+                    }
+                    else {
+                        console.log("fault: "+type);
+                        $this._drawText(courseObject.x, courseObject.y, type);
+                    }
+                });
+				
+				let doorsPipesHash = {}
+				doorsPipesHash['0'] = 'A'
+				doorsPipesHash['1'] = 'B'
+				doorsPipesHash['2'] = 'C'
+				doorsPipesHash['3'] = 'D'
+				doorsPipesHash['4'] = 'E'
+				doorsPipesHash['5'] = 'F'
+				doorsPipesHash['6'] = 'G'
+				doorsPipesHash['7'] = 'H'
+				doorsPipesHash['8'] = 'I'
+				doorsPipesHash['9'] = 'J'
+                remainingObjs.forEach(function(courseObject) {
+                    let type = courseObject.type;
+                    if($this._blocks.hasDraw(type)) {
+                        $this._drawObjectFromTheme($this._blocks, courseObject);
+						// Fix items in boxes/pipes opacity or border?
+						if (type != 7) { // Don't run for Ground Blocks
+							if (type != 6) { // Don't run for Hard Blocks
+								if (type != 4) { // Don't run for Brick Blocks
+									if (type != 49) { // Don't run for Bridge
+										let ctype = courseObject.childType
+										if ($this._monsters.hasDraw(ctype)) {
+											courseObject.type = ctype
+											courseObject.extend = []
+											$this._drawObjectFromTheme($this._monsters, courseObject);
+										}
+									}
+								}
+							}
+						}
+						
+						if (type === 9) { // Pipe Labelling
+							let PR = Math.floor(courseObject.flags / 0x100000) % 0x10 - 1;
+							PR = PR.toString()
+							if (PR != '-1') { // Real Pipe
+								let pipeText = doorsPipesHash[PR]
+								$this._drawText(courseObject.x+0.1, courseObject.y+0.5, pipeText);
+							}
+						}
+                    }
                     else if($this._monsters.hasDraw(type)) {
                         $this._drawObjectFromTheme($this._monsters, courseObject);
+						if (type === 55) { // Door Labelling
+							let PR = Math.floor(courseObject.flags / 0x200000) % 2;
+							PR = PR.toString()
+							let doorText = doorsPipesHash[PR]
+							$this._drawText(courseObject.x+0.1, courseObject.y+0.5, doorText);
+						}
                     }
                     else {
                         console.log("fault: "+type);
@@ -164,7 +235,11 @@ class Draw {
     _drawText(_x, _y, text) {
         let x = _x*this._base,
             y = this._yFix - _y*this._base;
-        this._context.fillText(text, x+3, y-3);
+		this._context.strokeStyle = "White";
+		this._context.lineWidth = 2;
+        this._context.strokeText(text, x+3, y-3);
+		this._context.fillStyle = "Black";
+		this._context.fillText(text, x+3, y-3);
     }
 
     /**
